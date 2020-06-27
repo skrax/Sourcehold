@@ -4,3 +4,6 @@
 [submodule "thirdparty/filesystem"]
 	path = thirdparty/filesystem
 	url = https://github.com/gulrak/filesystem
+[submodule "thirdparty/googletest"]
+	path = thirdparty/googletest
+	url = https://github.com/google/googletest
