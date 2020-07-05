@@ -1,4 +1,10 @@
 build/*
+debug/*
 cmake-build-debug/*
+data/*
 .idea
 .vscode
+.clang-format
+.clangd/*
+stronghold.cfg
+compile_commands.json
