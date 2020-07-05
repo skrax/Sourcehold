@@ -19,11 +19,11 @@ include_directories(${CMAKE_SOURCE_DIR}/thirdparty/blast/)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/duktape/)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/cxxopts/include/)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/filesystem/include/)
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/googletest/)
 
-# Test
+# gTest
+add_subdirectory(thirdparty/googletest)
 enable_testing()
-add_subdirectory(${PROJECT_SOURCE_DIR}/tests/)
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # pthread
 find_package (Threads)
