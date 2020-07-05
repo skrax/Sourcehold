@@ -92,3 +92,28 @@ target_link_libraries(
 	${LIBSWRESAMPLE_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 )
+
+# Tests
+add_executable(parserTest 
+    "${CMAKE_SOURCE_DIR}/tests/parser_test.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.cpp"
+)
+set_target_properties(parserTest PROPERTIES
+ 	CXX_STANDARD 11
+	CXX_STANDARD_REQUIRED YES
+	CXX_EXTENSIONS NO
+)
+target_link_libraries(parserTest
+     gtest
+     gtest_main
+     ${SDL2_LIBRARY}
+     ${OPENAL_LIBRARY}
+     ${FFMPEG_LIBRARIES}
+     ${SWSCALE_LIBRARIES}
+     ${LIBSWRESAMPLE_LIBRARIES}
+     ${CMAKE_THREAD_LIBS_INIT}
+)
+add_test(ParserTypeTest parserTest)
