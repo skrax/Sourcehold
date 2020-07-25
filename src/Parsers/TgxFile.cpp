@@ -1,144 +1,71 @@
 #include "Parsers/TgxFile.h"
-#include "System/Config.h"
 
-using namespace Sourcehold::Parsers;
-using namespace Sourcehold::System;
+#include <ios>
 
-struct TgxFile::TgxHeader {
-    uint32_t width;
-    uint32_t height;
-};
+namespace Sourcehold {
+namespace Parsers {
+namespace TGX {
 
-TgxFile::TgxFile()
-{
-}
+std::tuple<size_t, size_t, std::vector<uint32_t>> LoadTgxAsRGBA8888(
+    Parser &tgx_file) noexcept {
+  using namespace details;
+  auto tgx_header = GetTgxHeader(tgx_file);
 
-TgxFile::TgxFile(ghc::filesystem::path path)
-{
-    this->LoadFromDisk(path);
-}
+  std::vector<uint32_t> pixel_data(tgx_header.width * tgx_header.height, 0);
+  // Pixelformat = SDL_ARGB1555
 
-TgxFile::~TgxFile()
-{
-    Unload();
-}
-
-bool TgxFile::LoadFromDisk(ghc::filesystem::path path)
-{
-    if(!Parser::Open(path.string(), std::ifstream::in | std::ios::binary)) {
-        Logger::error(PARSERS)  << "Unable to open Tgx file '" << path << "'!" << std::endl;
-        return false;
+  auto ToRGBA8888 = [&](uint16_t pixel) -> uint32_t {  //
+    uint8_t a = 0xFF;
+    uint8_t r = ((pixel >> 10) & 0x1F) << 3;
+    uint8_t g = ((pixel >> 5) & 0x1F) << 3;
+    uint8_t b = (pixel & 0x1F) << 3;
+    return r << 24 | g << 16 | b << 8 | a;
+  };
+  int pixel_count = 0;
+  for (auto line = 0; line < tgx_header.height;) {
+    auto command_header = GetTgxCommandHeader(tgx_file);
+    switch (command_header.command) {
+      case Command::pixels: {
+        for (auto i = 0; i < command_header.length; ++i) {
+          pixel_data[line * tgx_header.width + pixel_count] =
+              ToRGBA8888(tgx_file.Get<uint16_t>());
+          ++pixel_count;
+        }
+        break;
+      }
+      case Command::transparent: {
+        pixel_count += command_header.length;
+        break;
+      }
+      case Command::repeatingPixel: {
+        auto pixel = ToRGBA8888(tgx_file.Get<uint16_t>());
+        for (auto i = 0; i < command_header.length; ++i) {
+          pixel_data[line * tgx_header.width + pixel_count] = pixel;
+          ++pixel_count;
+        }
+        break;
+      }
+      case Command::newline: {
+        ++line;
+        pixel_count = 0;
+        break;
+      }
     }
-
-    TgxHeader header;
-    header.width = GetDWord();
-    header.height = GetDWord();
-
-    /* Allocate image */
-    Surface surf;
-    surf.AllocNew(header.width, header.height);
-
-    /* Calculate size */
-    size_t size = Parser::GetLength() - Parser::Tell();
-
-    char *buf = new char[size];
-    Parser::GetData(buf, size);
-    Parser::Close();
-
-    /* Read image data */
-    surf.LockSurface();
-    ReadTgx(surf, buf, size, 0, 0, nullptr);
-    surf.UnlockSurface();
-
-    /* Convert to texture */
-    Texture::AllocFromSurface(surf);
-
-    delete [] buf;
-    return true;
+  }
+  return {tgx_header.width, tgx_header.height, pixel_data};
 }
+namespace details {
 
-void TgxFile::Unload()
-{
+TgxHeader GetTgxHeader(Parser &tgxFile) noexcept {
+  return {tgxFile.Get<uint32_t>(), tgxFile.Get<uint32_t>()};
 }
-
-void TgxFile::ReadTgx(Surface &tex, char *buf, size_t size, uint16_t offX, uint16_t offY, uint16_t *pal, uint8_t color)
-{
-    int32_t x = 0, y = 0;
-    char *end = buf + size;
-
-    while(buf < end) {
-        /* Read token byte */
-        uint8_t b = *(uint8_t*)buf;
-        buf++;
-        uint8_t len = (b & 0x1F) + 1;
-        uint8_t flag = b >> 5;
-
-        switch(flag) {
-        case 0x00: {
-            // pixel
-            for(uint8_t i = 0; i < len; ++i,++x) {
-                uint16_t pixelColor;
-                if(pal) {
-                    uint8_t index = *(uint8_t*)buf;
-                    buf++;
-                    pixelColor = pal[256 * color + index];
-                }
-                else {
-                    pixelColor = *reinterpret_cast<uint16_t*>(buf);
-                    buf += 2;
-                }
-                uint8_t r,g,b,a;
-                ReadPixel(pixelColor, r, g, b, a);
-                tex.SetPixel(x+offX, y+offY, r, g, b, a);
-            }
-        }
-        break;
-        case 0x04: {
-            // line break
-            y++;
-            x = 0;
-        }
-        break;
-        case 0x02: {
-            // repeated pixel
-            uint16_t pixelColor;
-            if(pal) {
-                uint8_t index = *(uint8_t*)buf;
-                buf++;
-                pixelColor = pal[256 * color + index];
-            }
-            else {
-                pixelColor = *reinterpret_cast<uint16_t*>(buf);
-                buf += 2;
-            }
-            uint8_t r,g,b,a;
-
-            ReadPixel(pixelColor, r, g, b,a );
-            for(uint8_t i = 0; i < len; ++i,++x) {
-                tex.SetPixel(x+offX, y+offY, r, g, b, 0xFF);
-            }
-        }
-        break;
-        case 0x01: {
-            // transparent pixels
-            for(uint8_t i = 0; i < len; i++, x++) {
-                tex.SetPixel(x+offX, y+offY, 0, 0, 0, 0);
-            }
-        }
-        break;
-        default: {
-            Logger::warning(PARSERS) << "Unknown token in tgx!" << std::endl;
-            return;
-        }
-        break;
-        }
-    }
+TgxCommandHeader GetTgxCommandHeader(Parser &tgxFile) noexcept {
+  uint8_t rawCommandHeader = tgxFile.Get<uint8_t>();
+  Command command = static_cast<Command>(rawCommandHeader >> 5);
+  uint8_t length = (rawCommandHeader & uint8_t{0x1F}) + 1;
+  return {command, length};
 }
-
-void TgxFile::ReadPixel(uint16_t pixel, uint8_t &r, uint8_t &g, uint8_t &b, uint8_t &a)
-{
-    a = 0xFF;
-    r = ((pixel >> 10) & 0x1F) << 3;
-    g = ((pixel >> 5) & 0x1F) << 3;
-    b = (pixel & 0x1F) << 3;
-}
+}  // namespace details
+}  // namespace TGX
+}  // namespace Parsers
+}  // namespace Sourcehold
