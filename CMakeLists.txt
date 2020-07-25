@@ -141,5 +141,32 @@ target_link_libraries(tgxTest
      ${CMAKE_THREAD_LIBS_INIT}
 )
 
+add_executable(mlbTest
+    "${CMAKE_SOURCE_DIR}/tests/mlb_test.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/MlbFile.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/MlbFile.h"
+)
+set_target_properties(mlbTest PROPERTIES
+ 	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED YES
+	CXX_EXTENSIONS NO
+)
+target_link_libraries(mlbTest
+     gtest
+     gtest_main
+     ${SDL2_LIBRARY}
+     ${OPENAL_LIBRARY}
+     ${FFMPEG_LIBRARIES}
+     ${SWSCALE_LIBRARIES}
+     ${LIBSWRESAMPLE_LIBRARIES}
+     ${CMAKE_THREAD_LIBS_INIT}
+)
+
+
 add_test(Parsertest parserTest)
 add_test(TgxTest tgxTest)
+add_test(MlbTest mlbTest)

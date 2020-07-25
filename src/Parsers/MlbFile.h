@@ -4,33 +4,17 @@
 #include <vector>
 
 #include "Assets.h"
-#include "System/Logger.h"
 #include "Parsers/Parser.h"
 
-#include "System/filesystem.h"
-
 namespace Sourcehold {
-    namespace Parsers {
-        /*
-         * The file containing all of the localized
-         * mission descriptions.
-         */
-        class MlbFile : private Parser {
-            /* Encoded in UTF-16LE */
-            std::vector<std::wstring> field;
-            uint16_t num = 0;
-        public:
-            MlbFile();
-            ~MlbFile();
-
-            bool LoadFromDisk(ghc::filesystem::path path);
-            void Clear();
-
-            inline std::wstring& GetString(Assets::MissionDescription index) {
-                return field.at(index);
-            }
-        protected:
-            struct SectionHeader;
-        };
-    }
-}
+namespace Parsers {
+namespace Mlb {
+// Takes a parser pointing to a .mlb file.
+// It is the callers responsibility to check if the parser is valid to read
+// from.
+//
+// Returns all entries of a .mlb file as strings.
+std::vector<std::string> Load(Parser& mlb) noexcept;
+}  // namespace Mlb
+}  // namespace Parsers
+}  // namespace Sourcehold
