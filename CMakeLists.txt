@@ -116,4 +116,30 @@ target_link_libraries(parserTest
      ${LIBSWRESAMPLE_LIBRARIES}
      ${CMAKE_THREAD_LIBS_INIT}
 )
-add_test(ParserTypeTest parserTest)
+add_executable(tgxTest
+    "${CMAKE_SOURCE_DIR}/tests/tgx_test.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/Parser.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.h"
+    "${CMAKE_SOURCE_DIR}/src/System/Logger.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/TgxFile.cpp"
+    "${CMAKE_SOURCE_DIR}/src/Parsers/TgxFile.h"
+)
+set_target_properties(tgxTest PROPERTIES
+ 	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED YES
+	CXX_EXTENSIONS NO
+)
+target_link_libraries(tgxTest
+     gtest
+     gtest_main
+     ${SDL2_LIBRARY}
+     ${OPENAL_LIBRARY}
+     ${FFMPEG_LIBRARIES}
+     ${SWSCALE_LIBRARIES}
+     ${LIBSWRESAMPLE_LIBRARIES}
+     ${CMAKE_THREAD_LIBS_INIT}
+)
+
+add_test(Parsertest parserTest)
+add_test(TgxTest tgxTest)
