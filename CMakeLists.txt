@@ -102,7 +102,7 @@ add_executable(parserTest
     "${CMAKE_SOURCE_DIR}/src/System/Logger.cpp"
 )
 set_target_properties(parserTest PROPERTIES
- 	CXX_STANDARD 11
+ 	CXX_STANDARD 17
 	CXX_STANDARD_REQUIRED YES
 	CXX_EXTENSIONS NO
 )
